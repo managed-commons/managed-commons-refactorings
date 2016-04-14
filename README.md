@@ -1,4 +1,4 @@
-# commons.refactorings
+# Commons.Refactorings
 A Roslyn-based refactorings plugin for Visual Studio
 
 VERY VERY ALPHA!!!
