@@ -55,6 +55,31 @@ namespace Commons.Refactorings
             return partials;
         }
 
+        public static List<TypeDeclarationSyntax> Break(this TypeDeclarationSyntax typeDecl, MemberDeclarationSyntax splitMethod, CancellationToken cancellationToken)
+        {
+            var partials = new List<TypeDeclarationSyntax>();
+            typeDecl = typeDecl.RemoveRegions();
+            var allMembers = typeDecl.Members.ToList();
+            var allMembersCount = allMembers.Count;
+            if (allMembersCount <= 1) {
+                partials.Add(typeDecl);
+                return partials;
+            }
+            typeDecl = typeDecl.AddPartialModifier();
+            allMembers = typeDecl.Members.ToList();
+            if (!(cancellationToken.IsCancellationRequested)) {
+                var tail = allMembers.SkipWhile(m => !m.IsEquivalentTo(splitMethod)).ToArray();
+                var first = typeDecl.RemoveMembers(tail);
+                partials.Add(first.WithoutTrailingTrivia());
+                var tree = SyntaxFactory.ParseSyntaxTree($"{typeDecl.Modifiers.ToString()} class {typeDecl.Identifier} {"{ private int dummy; }"}");
+                var nextPartial = tree.GetRoot(cancellationToken).DescendantNodes().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+                nextPartial = nextPartial.InsertNodesAfter(nextPartial.DescendantNodes().First(), tail);
+                nextPartial = nextPartial.RemoveNode(nextPartial.DescendantNodes().First(), SyntaxRemoveOptions.KeepNoTrivia);
+                partials.Add(nextPartial.WithLeadingTrivia(SyntaxFactory.LineFeed, SyntaxFactory.LineFeed));
+            }
+            return partials;
+        }
+
         public static string BuildNewPartialSourceName(this TypeDeclarationSyntax typeDecl)
         {
             var methodNode = (MethodDeclarationSyntax)typeDecl.Members.FirstOrDefault(m => m is MethodDeclarationSyntax);
@@ -77,32 +102,32 @@ namespace Commons.Refactorings
             return typeDecl.Members.Count > MaximumNumberOfMembers;
         }
 
-        private static List<SyntaxNode> EmptyList = new List<SyntaxNode>();
+        static List<SyntaxNode> EmptyList = new List<SyntaxNode>();
 
-        private static int CountOfPartialSiblings(TypeDeclarationSyntax typeDecl)
+        static int CountOfPartialSiblings(TypeDeclarationSyntax typeDecl)
         {
             return typeDecl.FilterSiblingsInNamespace(n => HasSameName(n, typeDecl)).Count();
         }
 
-        private static bool HasSameName(SyntaxNode node, TypeDeclarationSyntax typeDecl)
+        static bool HasSameName(SyntaxNode node, TypeDeclarationSyntax typeDecl)
         {
             var typeDeclarationSyntax = (node as TypeDeclarationSyntax);
             return typeDeclarationSyntax.IsPartial() && typeDeclarationSyntax?.Identifier.Text == typeDecl.Identifier.Text;
         }
 
-        private static bool IsPartial(this TypeDeclarationSyntax typeDecl)
+        static bool IsPartial(this TypeDeclarationSyntax typeDecl)
         {
             if (typeDecl == null)
                 return false;
             return typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
         }
 
-        private static TypeDeclarationSyntax RemoveMembers(this TypeDeclarationSyntax typeDecl, IEnumerable<MemberDeclarationSyntax> methods)
+        static TypeDeclarationSyntax RemoveMembers(this TypeDeclarationSyntax typeDecl, IEnumerable<MemberDeclarationSyntax> methods)
         {
             return typeDecl.RemoveNodes(methods, SyntaxRemoveOptions.KeepNoTrivia);
         }
 
-        private static TypeDeclarationSyntax RemoveRegions(this TypeDeclarationSyntax typeDecl)
+        static TypeDeclarationSyntax RemoveRegions(this TypeDeclarationSyntax typeDecl)
         {
             var descendants = typeDecl.DescendantNodes(descendIntoTrivia: true);
             var beginRegions = descendants.OfType<RegionDirectiveTriviaSyntax>();

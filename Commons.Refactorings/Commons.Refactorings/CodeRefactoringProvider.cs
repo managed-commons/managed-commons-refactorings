@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Composition;
 using System.Linq;
@@ -13,7 +14,7 @@ using Microsoft.CodeAnalysis.Formatting;
 namespace Commons.Refactorings
 {
     [ExportCodeRefactoringProvider(LanguageNames.CSharp, Name = nameof(CodeRefactoringProvider)), Shared]
-    internal class CodeRefactoringProvider : Microsoft.CodeAnalysis.CodeRefactorings.CodeRefactoringProvider
+    class CodeRefactoringProvider : Microsoft.CodeAnalysis.CodeRefactorings.CodeRefactoringProvider
     {
         public sealed override async Task ComputeRefactoringsAsync(CodeRefactoringContext context)
         {
@@ -22,24 +23,54 @@ namespace Commons.Refactorings
             // Find the node at the selection.
             var node = root.FindNode(context.Span);
 
-            // Only offer a refactoring if the selected node is a type declaration node.
-            var typeDecl = node as TypeDeclarationSyntax;
-            if (typeDecl == null) {
-                return;
-            }
-            if (!typeDecl.Keyword.IsKind(SyntaxKind.ClassKeyword))
-                return;
-            if (typeDecl.HasTooManyMembers()) {
-                var action = CodeAction.Create("Break into partials", c => Action_BreakIntoPartials(context.Document, typeDecl, c));
+            var methodDecl = node as MemberDeclarationSyntax;
+            if (methodDecl != null) {
+                var action = CodeAction.Create("Split here to a partial", c => Action_BreakIntoPartialFromMethod(context.Document, methodDecl, c));
                 context.RegisterRefactoring(action);
-            }
-            if (typeDecl.HasManyPartialsInSameSource()) {
-                var action = CodeAction.Create("Move partial to new source file", c => Action_SeparatePartial(context.Document, typeDecl, c));
-                context.RegisterRefactoring(action);
+            } else {
+                var typeDecl = node as TypeDeclarationSyntax;
+                if (typeDecl == null) {
+                    return;
+                }
+                if (!typeDecl.Keyword.IsKind(SyntaxKind.ClassKeyword))
+                    return;
+                if (typeDecl.HasTooManyMembers()) {
+                    var action = CodeAction.Create("Break into partials", c => Action_BreakIntoPartials(context.Document, typeDecl, c));
+                    context.RegisterRefactoring(action);
+                }
+                if (typeDecl.HasManyPartialsInSameSource()) {
+                    var action = CodeAction.Create("Move partial to new source file", c => Action_SeparatePartial(context.Document, typeDecl, c));
+                    context.RegisterRefactoring(action);
+                }
             }
         }
 
-        private async Task<Solution> Action_BreakIntoPartials(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
+        static T FindParent<T>(SyntaxNode node) where T : SyntaxNode
+        {
+            if (node == null)
+                return null;
+            if (node is T)
+                return (T)node;
+            return FindParent<T>(node.Parent);
+        }
+
+        static TypeDeclarationSyntax FindParentTypeDeclaration(MemberDeclarationSyntax methodDecl) => FindParent<TypeDeclarationSyntax>(methodDecl.Parent);
+
+        async Task<Solution> Action_BreakIntoPartialFromMethod(Document document, MemberDeclarationSyntax methodDecl, CancellationToken cancellationToken)
+        {
+            TypeDeclarationSyntax typeDecl = FindParentTypeDeclaration(methodDecl);
+            List<TypeDeclarationSyntax> partials = typeDecl.Break(methodDecl, cancellationToken);
+            return await document.Update(cancellationToken,
+                root => {
+                    var newRoot = root.ReplaceNode(typeDecl, partials.First());
+                    var classDeclarations = newRoot.DescendantNodesAndSelf().OfType<ClassDeclarationSyntax>();
+                    var newTypeDecl = classDeclarations.FirstOrDefault(n => n.Identifier.Text == typeDecl.Identifier.Text);
+                    var rootNode = newTypeDecl == null ? newRoot : newRoot.InsertNodesAfter(newTypeDecl, partials.Skip(1));
+                    return Formatter.Format(rootNode, document.Project.Solution.Workspace, cancellationToken: cancellationToken);
+                });
+        }
+
+        async Task<Solution> Action_BreakIntoPartials(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
         {
             List<TypeDeclarationSyntax> partials = typeDecl.Break(cancellationToken);
             return await document.Update(cancellationToken,
@@ -52,7 +83,7 @@ namespace Commons.Refactorings
                 });
         }
 
-        private async Task<Solution> Action_SeparatePartial(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
+        async Task<Solution> Action_SeparatePartial(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
         {
             var newCompilationUnit = await typeDecl.AsNewCompilationUnit(document, cancellationToken);
             if (newCompilationUnit == null || cancellationToken.IsCancellationRequested)
@@ -67,6 +98,5 @@ namespace Commons.Refactorings
                 return document.Project.Solution;
             return document.AddDerivedDocument(newSolution, newSourceName, newCompilationUnit);
         }
-
     }
 }

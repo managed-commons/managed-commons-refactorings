@@ -24,12 +24,12 @@ namespace Commons.Refactorings
             return document.Project.Solution.WithDocumentText(document.Id, text);
         }
 
-        private static DocumentId CreateNewId(this Document document)
+        static DocumentId CreateNewId(this Document document)
         {
             return DocumentId.CreateNewId(document.Project.Id);
         }
 
-        private static List<string> Folders(this Document document)
+        static List<string> Folders(this Document document)
         {
             var documentFolderPath = Path.GetDirectoryName(document.FilePath);
             var projectFolderPath = Path.GetDirectoryName(document.Project.FilePath);
