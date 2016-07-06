@@ -1,3 +1,25 @@
+// Commons.Refactorings
+//
+// Copyright (c) 2016 Rafael 'Monoman' Teixeira, Managed Commons Team
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Composition;
@@ -58,8 +80,8 @@ namespace Commons.Refactorings
 
         async Task<Solution> Action_BreakIntoPartialFromMethod(Document document, MemberDeclarationSyntax methodDecl, CancellationToken cancellationToken)
         {
-            TypeDeclarationSyntax typeDecl = FindParentTypeDeclaration(methodDecl);
-            List<TypeDeclarationSyntax> partials = typeDecl.Break(methodDecl, cancellationToken);
+            var typeDecl = FindParentTypeDeclaration(methodDecl);
+            var partials = typeDecl.Break(methodDecl, cancellationToken);
             return await document.Update(cancellationToken,
                 root => {
                     var newRoot = root.ReplaceNode(typeDecl, partials.First());
@@ -72,7 +94,7 @@ namespace Commons.Refactorings
 
         async Task<Solution> Action_BreakIntoPartials(Document document, TypeDeclarationSyntax typeDecl, CancellationToken cancellationToken)
         {
-            List<TypeDeclarationSyntax> partials = typeDecl.Break(cancellationToken);
+            var partials = typeDecl.Break(cancellationToken);
             return await document.Update(cancellationToken,
                 root => {
                     var newRoot = root.ReplaceNode(typeDecl, partials.First());

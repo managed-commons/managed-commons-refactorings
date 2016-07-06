@@ -1,4 +1,26 @@
-﻿using System;
+﻿// Commons.Refactorings
+//
+// Copyright (c) 2016 Rafael 'Monoman' Teixeira, Managed Commons Team
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -14,10 +36,7 @@ namespace Commons.Refactorings
     {
         public const int MaximumNumberOfMembers = 12;
 
-        public static TypeDeclarationSyntax AddPartialModifier(this TypeDeclarationSyntax typeDecl)
-        {
-            return typeDecl.IsPartial() ? typeDecl : typeDecl.InsertTokensAfter(typeDecl.Modifiers[0], SyntaxFactory.ParseTokens("partial "));
-        }
+        public static TypeDeclarationSyntax AddPartialModifier(this TypeDeclarationSyntax typeDecl) => typeDecl.IsPartial() ? typeDecl : typeDecl.InsertTokensAfter(typeDecl.Modifiers[0], SyntaxFactory.ParseTokens("partial "));
 
         public static async Task<SyntaxNode> AsNewCompilationUnit(this TypeDeclarationSyntax typeDecl, Document document, CancellationToken cancellationToken)
         {
@@ -87,27 +106,15 @@ namespace Commons.Refactorings
             return typeDecl.Identifier.Text + '-' + suffix;
         }
 
-        public static IEnumerable<SyntaxNode> FilterSiblingsInNamespace(this TypeDeclarationSyntax typeDecl, Func<SyntaxNode, bool> filter)
-        {
-            return (typeDecl.Parent as NamespaceDeclarationSyntax)?.Members.Where(filter) ?? EmptyList;
-        }
+        public static IEnumerable<SyntaxNode> FilterSiblingsInNamespace(this TypeDeclarationSyntax typeDecl, Func<SyntaxNode, bool> filter) => (typeDecl.Parent as NamespaceDeclarationSyntax)?.Members.Where(filter) ?? EmptyList;
 
-        public static bool HasManyPartialsInSameSource(this TypeDeclarationSyntax typeDecl)
-        {
-            return typeDecl.IsPartial() && CountOfPartialSiblings(typeDecl) > 1;
-        }
+        public static bool HasManyPartialsInSameSource(this TypeDeclarationSyntax typeDecl) => typeDecl.IsPartial() && CountOfPartialSiblings(typeDecl) > 1;
 
-        public static bool HasTooManyMembers(this TypeDeclarationSyntax typeDecl)
-        {
-            return typeDecl.Members.Count > MaximumNumberOfMembers;
-        }
+        public static bool HasTooManyMembers(this TypeDeclarationSyntax typeDecl) => typeDecl.Members.Count > MaximumNumberOfMembers;
 
         static List<SyntaxNode> EmptyList = new List<SyntaxNode>();
 
-        static int CountOfPartialSiblings(TypeDeclarationSyntax typeDecl)
-        {
-            return typeDecl.FilterSiblingsInNamespace(n => HasSameName(n, typeDecl)).Count();
-        }
+        static int CountOfPartialSiblings(TypeDeclarationSyntax typeDecl) => typeDecl.FilterSiblingsInNamespace(n => HasSameName(n, typeDecl)).Count();
 
         static bool HasSameName(SyntaxNode node, TypeDeclarationSyntax typeDecl)
         {
@@ -122,10 +129,7 @@ namespace Commons.Refactorings
             return typeDecl.Modifiers.Any(SyntaxKind.PartialKeyword);
         }
 
-        static TypeDeclarationSyntax RemoveMembers(this TypeDeclarationSyntax typeDecl, IEnumerable<MemberDeclarationSyntax> methods)
-        {
-            return typeDecl.RemoveNodes(methods, SyntaxRemoveOptions.KeepNoTrivia);
-        }
+        static TypeDeclarationSyntax RemoveMembers(this TypeDeclarationSyntax typeDecl, IEnumerable<MemberDeclarationSyntax> methods) => typeDecl.RemoveNodes(methods, SyntaxRemoveOptions.KeepNoTrivia);
 
         static TypeDeclarationSyntax RemoveRegions(this TypeDeclarationSyntax typeDecl)
         {
