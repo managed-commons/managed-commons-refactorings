@@ -47,7 +47,7 @@
     <StartArguments>/rootsuffix Roslyn</StartArguments>
   </PropertyGroup>
   <ItemGroup>
-    <Content Include="Commons,Refactorings.png">
+    <Content Include="Commons.Refactorings.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <IncludeInVSIX>true</IncludeInVSIX>
     </Content>
