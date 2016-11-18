@@ -36,7 +36,7 @@
     <Compile Include="CodeRefactoringProvider.cs" />
     <Compile Include="DocumentExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TypeDeclarationSyntaxExtensions.cs" />
+    <Compile Include="ClassDeclarationSyntaxExtensions.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
