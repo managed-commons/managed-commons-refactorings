@@ -65,22 +65,7 @@ namespace Commons.Refactorings
             }
         }
 
-        private static T FindParent<T>(SyntaxNode node) where T : SyntaxNode
-        {
-            if (node == null)
-                return null;
-            if (node is T)
-                return (T)node;
-            return FindParent<T>(node.Parent);
-        }
-
-        private static ClassDeclarationSyntax FindParentClassDeclaration(MemberDeclarationSyntax memberDecl)
-            => FindParent<ClassDeclarationSyntax>(memberDecl.Parent);
-
-        private static bool IsMemberOfSomeClass(MemberDeclarationSyntax memberDecl)
-            => FindParentClassDeclaration(memberDecl) != null;
-
-        private async Task<Solution> Action_BreakIntoPartialFromMemberAsync(Document document, MemberDeclarationSyntax memberDecl, CancellationToken cancellationToken)
+        private async static Task<Solution> Action_BreakIntoPartialFromMemberAsync(Document document, MemberDeclarationSyntax memberDecl, CancellationToken cancellationToken)
         {
             var classDecl = FindParentClassDeclaration(memberDecl);
             var partials = classDecl.Break(memberDecl, cancellationToken);
@@ -95,7 +80,7 @@ namespace Commons.Refactorings
                 });
         }
 
-        private async Task<Solution> Action_BreakIntoPartialsAsync(Document document, ClassDeclarationSyntax classDecl, CancellationToken cancellationToken)
+        private async static Task<Solution> Action_BreakIntoPartialsAsync(Document document, ClassDeclarationSyntax classDecl, CancellationToken cancellationToken)
         {
             var partials = classDecl.Break(cancellationToken);
             return await document.Update(cancellationToken,
@@ -109,9 +94,9 @@ namespace Commons.Refactorings
                 });
         }
 
-        private async Task<Solution> Action_SeparatePartialAsync(Document document, ClassDeclarationSyntax classDecl, CancellationToken cancellationToken)
+        private async static Task<Solution> Action_SeparatePartialAsync(Document document, ClassDeclarationSyntax classDecl, CancellationToken cancellationToken)
         {
-            var newCompilationUnit = await classDecl.AsNewCompilationUnit(document, cancellationToken);
+            var newCompilationUnit = await classDecl.AsNewCompilationUnitAsync(document, cancellationToken);
             if (newCompilationUnit == null || cancellationToken.IsCancellationRequested)
                 return document.Project.Solution;
             var newSourceName = classDecl.BuildNewPartialSourceName();
@@ -125,5 +110,20 @@ namespace Commons.Refactorings
                 return document.Project.Solution;
             return document.AddDerivedDocument(newSolution, newSourceName, newCompilationUnit);
         }
+
+        private static T FindParent<T>(SyntaxNode node) where T : SyntaxNode
+        {
+            if (node == null)
+                return null;
+            if (node is T)
+                return (T)node;
+            return FindParent<T>(node.Parent);
+        }
+
+        private static ClassDeclarationSyntax FindParentClassDeclaration(MemberDeclarationSyntax memberDecl)
+            => FindParent<ClassDeclarationSyntax>(memberDecl.Parent);
+
+        private static bool IsMemberOfSomeClass(MemberDeclarationSyntax memberDecl)
+            => FindParentClassDeclaration(memberDecl) != null;
     }
 }

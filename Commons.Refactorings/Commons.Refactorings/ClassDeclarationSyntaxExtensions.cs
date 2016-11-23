@@ -39,7 +39,7 @@ namespace Commons.Refactorings
         public static ClassDeclarationSyntax AddPartialModifier(this ClassDeclarationSyntax classDecl)
             => classDecl.IsPartial() ? classDecl : classDecl.InsertPartialFragment();
 
-        public static async Task<SyntaxNode> AsNewCompilationUnit(this ClassDeclarationSyntax classDecl, Document document, CancellationToken cancellationToken)
+        public static async Task<SyntaxNode> AsNewCompilationUnitAsync(this ClassDeclarationSyntax classDecl, Document document, CancellationToken cancellationToken)
         {
             var newRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
             var nodesToRemove = classDecl.FilterSiblingsInNamespace(n => !n.Equals(classDecl));
@@ -67,7 +67,7 @@ namespace Commons.Refactorings
             while (!(cancellationToken.IsCancellationRequested || membersMoved >= allMembersCount))
             {
                 var membersToInsert = allMembers.Skip(membersMoved).Take(MaximumNumberOfMembers).ToArray();
-                var tree = SyntaxFactory.ParseSyntaxTree($"{classDecl.Modifiers.ToString()} class {classDecl.Identifier} {CLASS_BODY_TEMPLATE}");
+                var tree = SyntaxFactory.ParseSyntaxTree($"{classDecl.Modifiers} class {classDecl.Identifier} {CLASS_BODY_TEMPLATE}");
                 var nextPartial = tree.GetRoot(cancellationToken).DescendantNodes().OfType<ClassDeclarationSyntax>().FirstOrDefault();
                 nextPartial = nextPartial.InsertNodesAfter(nextPartial.DescendantNodes().First(), membersToInsert);
                 nextPartial = nextPartial.RemoveNode(nextPartial.DescendantNodes().First(), SyntaxRemoveOptions.KeepNoTrivia);
@@ -136,7 +136,7 @@ namespace Commons.Refactorings
 
         private static bool HasSameName(SyntaxNode node, ClassDeclarationSyntax classDecl)
         {
-            var typeDeclarationSyntax = (node as ClassDeclarationSyntax);
+            var typeDeclarationSyntax = node as ClassDeclarationSyntax;
             return typeDeclarationSyntax.IsPartial() && typeDeclarationSyntax?.Identifier.Text == classDecl.Identifier.Text;
         }
 
