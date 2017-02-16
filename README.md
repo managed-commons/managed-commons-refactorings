@@ -1,4 +1,4 @@
-# Commons.Refactorings 1.0.0-RC1
+# Commons.Refactorings 1.0-Beta3
 A Roslyn-based refactorings plugin for Visual Studio
 
 **STILL BETA!!!**
