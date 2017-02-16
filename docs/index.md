@@ -1,4 +1,4 @@
-# Latest release: Commons.Refactorings 1.0.0-RC1
+# Latest release: Commons.Refactorings 1.0-Beta3
 
 ## **STILL BETA!!!**
 
